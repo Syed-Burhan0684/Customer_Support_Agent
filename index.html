@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Customer Support — Demo</title>
+<style>
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f7fafc; margin:0; padding:0; display:flex; align-items:center; justify-content:center; height:100vh; }
+  .chat-card { width:720px; max-width:95%; background:white; border-radius:12px; box-shadow:0 8px 30px rgba(2,6,23,0.08); padding:18px; }
+  h1 { margin:0 0 10px 0; font-size:20px; color:#0f172a; }
+  #chat { height:420px; overflow:auto; border:1px solid #e6e9ef; border-radius:8px; padding:12px; background:#fcfdff; }
+  .msg { margin:8px 0; padding:10px 12px; border-radius:10px; max-width:85%; }
+  .user { background:#e6f4ff; align-self:flex-end; margin-left:auto; }
+  .agent { background:#fff; border:1px solid #eef2ff; }
+  .meta { font-size:12px; color:#64748b; margin-top:6px; }
+  .controls { display:flex; gap:8px; margin-top:12px; }
+  input[type="text"] { flex:1; padding:10px 12px; border-radius:8px; border:1px solid #e6e9ef; font-size:15px; }
+  button { padding:10px 14px; border-radius:8px; border:0; background:#0ea5a5; color:white; cursor:pointer; font-weight:600; }
+  button.secondary { background:#64748b; }
+  .small { font-size:13px; color:#475569; }
+  .candidate { margin-top:8px; border-left:3px solid #e2e8f0; padding:8px; background:#fbfdff; border-radius:6px; }
+  .loading { display:inline-block; width:14px; height:14px; border-radius:50%; border:3px solid #e2e8f0; border-top-color:#0ea5a5; animation:spin 1s linear infinite; vertical-align:middle; margin-left:8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="chat-card">
+    <h1>Customer Support Demo</h1>
+    <div id="chat" aria-live="polite"></div>
+
+    <div class="controls">
+      <input id="input" type="text" placeholder="Ask a question (e.g., How can I reset my password?)" />
+      <button id="send">Send</button>
+      <button id="escalate" class="secondary">Escalate</button>
+    </div>
+
+    <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+      <div class="small">Confidence threshold = <span id="threshold">0.70</span></div>
+      <div class="small">Local-only demo • No external services required</div>
+    </div>
+  </div>
+
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const escBtn = document.getElementById('escalate');
+const thresholdEl = document.getElementById('threshold');
+
+const apiBase = window.location.origin; // same host
+
+function appendMessage(text, who='agent', meta='') {
+  const div = document.createElement('div');
+  div.className = 'msg ' + (who === 'user' ? 'user' : 'agent');
+  div.innerHTML = text + (meta ? `<div class="meta">${meta}</div>` : '');
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function appendCandidate(c) {
+  const d = document.createElement('div');
+  d.className = 'candidate';
+  d.innerHTML = `<b>${c.question}</b><div style="margin-top:6px">${c.answer}</div><div class="meta">id: ${c.id} • distance: ${c.distance}</div>`;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendMessage() {
+  const msg = input.value.trim();
+  if (!msg) return;
+  appendMessage(msg, 'user');
+  input.value = '';
+  // show loading visual
+  const loading = document.createElement('div');
+  loading.className = 'msg agent';
+  loading.innerHTML = `Thinking <span class="loading"></span>`;
+  chat.appendChild(loading);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const res = await fetch(apiBase + '/chat', {
+      method:'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id: 'demo', message: msg })
+    });
+    const data = await res.json();
+    // remove loading
+    chat.removeChild(loading);
+
+    // show single reply
+    appendMessage(data.reply, 'agent', data.confident ? `Confident (similarity=${Number(data.similarity).toFixed(3)})` : `Not confident (best similarity=${Number(data.similarity).toFixed(3)})`);
+
+    if (!data.confident && data.candidates && data.candidates.length > 0) {
+      const showBtn = document.createElement('button');
+      showBtn.textContent = 'Show candidates';
+      showBtn.style.marginTop = '8px';
+      showBtn.onclick = () => {
+        data.candidates.forEach(c=>appendCandidate(c));
+        showBtn.remove();
+      };
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(showBtn);
+      chat.appendChild(wrapper);
+      chat.scrollTop = chat.scrollHeight;
+    }
+  } catch (err) {
+    chat.removeChild(loading);
+    appendMessage('Error contacting server. See console for details.', 'agent');
+    console.error(err);
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+escBtn.addEventListener('click', async () => {
+  const lastUser = Array.from(document.querySelectorAll('.msg.user')).pop();
+  const message = lastUser ? lastUser.textContent : '';
+  if (!message) {
+    alert('Send a user message first, then click Escalate.');
+    return;
+  }
+  appendMessage('Creating escalation ticket...', 'agent');
+  try {
+    const res = await fetch(apiBase + '/escalate', {
+      method:'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ user_id: 'demo', message })
+    });
+    const data = await res.json();
+    appendMessage(`Ticket created: ${data.ticket_id}`, 'agent');
+  } catch (err) {
+    appendMessage('Failed to create ticket', 'agent');
+    console.error(err);
+  }
+});
+
+// Set threshold display from env value if available
+(async function loadThreshold(){
+  // attempt to fetch /health and read similarity threshold client-side isn't necessary;
+  // We just display default from code. You could expose it in an endpoint if desired.
+})();
+</script>
+</body>
+</html>

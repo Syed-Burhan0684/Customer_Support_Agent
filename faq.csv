@@ -1,0 +1,16 @@
+id,question,answer,category
+1,How can I reset my password?,To reset your password go to Settings → Reset Password and follow the instructions,Account
+2,What is your refund policy?,We offer refunds within 30 days of purchase. To request a refund contact support@example.com with your order ID,Billing
+3,How can I contact human support?,Type "human" or "agent" and the system will escalate to human support. You can also email support@example.com,Support
+4,How do I update my account information?,Go to your Account → Profile to edit personal details like email → name and password,Account
+5,What payment methods do you accept?,We accept all major credit cards (Visa → Mastercard → Amex) → PayPal and Apple Pay,Billing
+6,How can I track my order?,To track your order → visit Orders → Track Order and enter your tracking number or email,Orders
+7,Can I return a damaged item?,Yes—if your item arrives damaged → report it within 7 days and we'll issue a full replacement or refund,Shipping
+8,Do you ship internationally?,Yes—we ship to most countries worldwide. International delivery times and costs may vary,Shipping
+9,How do I redeem a promotional code?,At checkout → enter your promo code in the “Discount Code” field and click "Apply",Promotions
+10,What should I do if I forgot my username?,Click “Forgot username?” on the login page and follow the steps to recover your username,Account
+11,How do I cancel my subscription?,Go to Subscription → Cancel Subscription and confirm. After cancellation → you retain access until the period ends,Subscription
+12,Is my personal data safe?,We use industry-standard encryption and securely store data. Your privacy is important to us,Security
+13,Do you offer gift cards?,Yes—digital gift cards are available via our Gift Cards section. They never expire,General
+14,How do I change my shipping address?,Before placing an order → update the address in Shipping → Manage Addresses; after ordering → contact support immediately,Orders
+15,What is your privacy policy?,Our Privacy Policy explains how we collect use and store data. Read it on our website under Legal → Privacy,Legal
